@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold">Manage Users</h1>
+    <a href="{% url 'admin_panel:user_create' %}"
+       class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+        Create User
+    </a>
+</div>
+
+<div class="bg-gray-800 rounded-xl border border-gray-700 overflow-x-auto">
+    <table class="w-full text-sm">
+        <thead class="bg-gray-900/50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Email</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Name</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Role</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">MFA</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Active</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-700">
+            {% for u in users %}
+            <tr class="hover:bg-gray-700/50">
+                <td class="px-4 py-3 text-white font-medium">{{ u.email }}</td>
+                <td class="px-4 py-3 text-gray-300">{{ u.display_name }}</td>
+                <td class="px-4 py-3">
+                    {% if u.is_tenant_admin %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-800 text-purple-200">Admin</span>
+                    {% else %}
+                    <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300">User</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    {% if u.mfa_enabled %}
+                    <span class="text-green-400 text-xs">Enabled</span>
+                    {% else %}
+                    <span class="text-yellow-400 text-xs">Not Set Up</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3">
+                    {% if u.is_active %}
+                    <span class="text-green-400">&#9679;</span>
+                    {% else %}
+                    <span class="text-red-400">&#9679;</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 space-x-2 whitespace-nowrap">
+                    <a href="{% url 'admin_panel:user_edit' u.pk %}" class="text-blue-400 hover:text-blue-300 text-xs">Edit</a>
+                    {% if u.mfa_enabled %}
+                    <form method="post" action="{% url 'admin_panel:user_reset_mfa' u.pk %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-yellow-400 hover:text-yellow-300 text-xs"
+                                onclick="return confirm('Reset MFA for {{ u.email }}?')">Reset MFA</button>
+                    </form>
+                    <form method="post" action="{% url 'admin_panel:user_regen_recovery' u.pk %}" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="text-orange-400 hover:text-orange-300 text-xs"
+                                onclick="return confirm('Regenerate recovery codes for {{ u.email }}?')">Regen Codes</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

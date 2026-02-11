@@ -1,0 +1,139 @@
+{% load dashboard_tags %}
+
+<!-- Client Filter -->
+<div class="mb-6">
+    <form id="summary-filters" hx-get="{% url 'dashboard:summary' %}" hx-target="#summary-content" hx-swap="innerHTML" hx-push-url="true">
+        <div class="flex flex-wrap items-end gap-4">
+            <div class="w-64">
+                <label class="block text-xs font-medium text-gray-400 mb-1">Client</label>
+                <select name="client_id"
+                        class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500"
+                        hx-get="{% url 'dashboard:summary' %}"
+                        hx-target="#summary-content"
+                        hx-swap="innerHTML"
+                        hx-include="#summary-filters"
+                        hx-push-url="true">
+                    <option value="">All Clients</option>
+                    {% for c in clients %}
+                    <option value="{{ c.client_id }}" {% if selected_client_id == c.client_id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- KPI Tiles -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Balance</p>
+        <p class="text-2xl font-bold text-white mt-2 num-col">${{ kpis.total_balance|floatformat:2|default:"0.00" }}</p>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Available</p>
+        <p class="text-2xl font-bold text-white mt-2 num-col">${{ kpis.total_available|floatformat:2|default:"0.00" }}</p>
+    </div>
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+        <p class="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Pending</p>
+        <p class="text-2xl font-bold text-yellow-400 mt-2 num-col">${{ kpis.total_pending|floatformat:2|default:"0.00" }}</p>
+    </div>
+</div>
+
+<!-- Accounts Table -->
+<div class="bg-gray-800 rounded-xl border border-gray-700">
+    <div class="px-6 py-4 border-b border-gray-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <h2 class="text-lg font-semibold">Accounts</h2>
+        <div class="w-full sm:w-72">
+            <input type="text" name="search" value="{{ search }}"
+                   placeholder="Search accounts..."
+                   class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500"
+                   hx-get="{% url 'dashboard:summary' %}"
+                   hx-target="#summary-content"
+                   hx-swap="innerHTML"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-include="#summary-filters"
+                   hx-push-url="true">
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-900/50">
+                <tr>
+                    {% for col_name, col_key in "Account Name:account_name,Institution:institution_name,Type:type,Subtype:subtype,Mask:mask,Balance:current_balance,Available:available_balance,Credit Limit:credit_limit,Utilization:utilization_pct,Overdrawn:is_overdrawn,Balance As Of:balance_as_of"|split_pairs %}
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:text-white"
+                        hx-get="{% url 'dashboard:summary' %}?sort={{ col_key }}&order={% if sort == col_key and order == 'asc' %}desc{% else %}asc{% endif %}&client_id={{ selected_client_id }}&search={{ search }}"
+                        hx-target="#summary-content"
+                        hx-swap="innerHTML"
+                        hx-push-url="true">
+                        {{ col_name }}
+                        {% if sort == col_key %}
+                        <span class="text-blue-400">{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+                {% for row in accounts.rows %}
+                <tr class="hover:bg-gray-700/50 transition-colors">
+                    <td class="px-4 py-3 font-medium text-white">{{ row.account_name|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-300">{{ row.institution_name|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-300">{{ row.type|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-300">{{ row.subtype|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-400 font-mono">{{ row.mask|default:"-" }}</td>
+                    <td class="px-4 py-3 num-col {% if row.current_balance < 0 %}text-red-400{% else %}text-white{% endif %}">
+                        {{ row.current_balance|floatformat:2|default:"-" }}
+                    </td>
+                    <td class="px-4 py-3 num-col text-gray-300">{{ row.available_balance|floatformat:2|default:"-" }}</td>
+                    <td class="px-4 py-3 num-col text-gray-300">{{ row.credit_limit|floatformat:2|default:"-" }}</td>
+                    <td class="px-4 py-3 num-col text-gray-300">
+                        {% if row.utilization_pct is not None %}{{ row.utilization_pct|floatformat:1 }}%{% else %}-{% endif %}
+                    </td>
+                    <td class="px-4 py-3">
+                        {% if row.is_overdrawn %}
+                        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-red-800 text-red-200">Yes</span>
+                        {% else %}
+                        <span class="text-gray-500">No</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">{{ row.balance_as_of|date:"M d, Y H:i"|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="11" class="px-4 py-8 text-center text-gray-500">No accounts found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if accounts.total_pages > 1 %}
+    <div class="px-6 py-4 border-t border-gray-700 flex items-center justify-between">
+        <p class="text-sm text-gray-400">
+            Showing {{ accounts.rows|length }} of {{ accounts.total }} accounts (page {{ accounts.page }} of {{ accounts.total_pages }})
+        </p>
+        <div class="flex gap-2">
+            {% if accounts.page > 1 %}
+            <button class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white"
+                    hx-get="{% url 'dashboard:summary' %}?page={{ accounts.page|add:"-1" }}&sort={{ sort }}&order={{ order }}&client_id={{ selected_client_id }}&search={{ search }}"
+                    hx-target="#summary-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true">
+                Previous
+            </button>
+            {% endif %}
+            {% if accounts.page < accounts.total_pages %}
+            <button class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white"
+                    hx-get="{% url 'dashboard:summary' %}?page={{ accounts.page|add:"1" }}&sort={{ sort }}&order={{ order }}&client_id={{ selected_client_id }}&search={{ search }}"
+                    hx-target="#summary-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true">
+                Next
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>

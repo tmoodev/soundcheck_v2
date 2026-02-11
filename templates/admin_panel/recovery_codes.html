@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <h1 class="text-xl font-bold mb-6">Recovery Codes for {{ target_user.email }}</h1>
+
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 space-y-4">
+        <div class="bg-yellow-800/50 text-yellow-200 border border-yellow-700 rounded-lg px-4 py-3 text-sm">
+            <strong>Important:</strong> Share these codes securely with the user. They will not be shown again.
+        </div>
+
+        <div class="bg-gray-900 rounded-lg p-4 grid grid-cols-2 gap-2">
+            {% for code in recovery_codes %}
+            <code class="text-sm font-mono text-green-300 select-all">{{ code }}</code>
+            {% endfor %}
+        </div>
+
+        <a href="{% url 'admin_panel:user_list' %}"
+           class="block w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-center transition-colors">
+            Back to Users
+        </a>
+    </div>
+</div>
+{% endblock %}

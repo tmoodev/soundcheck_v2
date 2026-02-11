@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load dashboard_tags %}
+
+{% block content %}
+<div id="summary-content"
+     hx-get="{% url 'dashboard:summary' %}"
+     hx-trigger="none"
+     hx-target="#summary-content"
+     hx-swap="innerHTML">
+    {% include "partials/summary_content.html" %}
+</div>
+{% endblock %}

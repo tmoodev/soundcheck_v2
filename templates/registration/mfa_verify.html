@@ -1,0 +1,32 @@
+{% extends "base_auth.html" %}
+{% block title %}Verify MFA{% endblock %}
+{% block heading %}Two-Factor Verification{% endblock %}
+
+{% block form_content %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    {% if form.errors %}
+    <div class="bg-red-800/50 text-red-200 border border-red-700 rounded-lg px-4 py-3 text-sm">
+        {% for field, errors in form.errors.items %}{% for error in errors %}{{ error }}{% endfor %}{% endfor %}
+    </div>
+    {% endif %}
+
+    <p class="text-sm text-gray-400">Enter the 6-digit code from your authenticator app, or a recovery code.</p>
+
+    <div>
+        <label for="id_code" class="block text-sm font-medium text-gray-300 mb-1">Code</label>
+        {{ form.code }}
+    </div>
+
+    <div class="flex items-center">
+        {{ form.remember_device }}
+        <label for="id_remember_device" class="ml-2 text-sm text-gray-300">Remember this device for 7 days</label>
+    </div>
+
+    <button type="submit"
+            class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+        Verify
+    </button>
+</form>
+{% endblock %}

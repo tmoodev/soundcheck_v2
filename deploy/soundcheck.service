@@ -1,0 +1,31 @@
+[Unit]
+Description=SoundCheck Financial Gunicorn
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=notify
+User=soundcheck
+Group=soundcheck
+WorkingDirectory=/home/soundcheck/soundcheck_v2
+EnvironmentFile=/home/soundcheck/soundcheck_v2/.env
+ExecStart=/home/soundcheck/soundcheck_v2/venv/bin/gunicorn \
+    soundcheck.wsgi:application \
+    --bind 127.0.0.1:8000 \
+    --workers 4 \
+    --timeout 120 \
+    --access-logfile - \
+    --error-logfile -
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=on-failure
+RestartSec=5
+KillMode=mixed
+
+# Security hardening
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/soundcheck/soundcheck_v2
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

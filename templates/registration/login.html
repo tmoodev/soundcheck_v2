@@ -1,0 +1,33 @@
+{% extends "base_auth.html" %}
+{% block title %}Login{% endblock %}
+{% block heading %}Sign In{% endblock %}
+
+{% block form_content %}
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+    <div class="bg-red-800/50 text-red-200 border border-red-700 rounded-lg px-4 py-3 text-sm">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+    </div>
+    {% endif %}
+
+    <div>
+        <label for="id_email" class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+        {{ form.email }}
+    </div>
+    <div>
+        <label for="id_password" class="block text-sm font-medium text-gray-300 mb-1">Password</label>
+        {{ form.password }}
+    </div>
+    <button type="submit"
+            class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+        Sign In
+    </button>
+    <div class="text-center">
+        <a href="{% url 'accounts:password_reset' %}" class="text-sm text-blue-400 hover:text-blue-300">
+            Forgot password?
+        </a>
+    </div>
+</form>
+{% endblock %}

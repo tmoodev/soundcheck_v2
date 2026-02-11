@@ -1,0 +1,160 @@
+{% load dashboard_tags %}
+
+<!-- Filters -->
+<div class="mb-6">
+    <form id="txn-filters" hx-get="{% url 'dashboard:transactions' %}" hx-target="#transactions-content" hx-swap="innerHTML" hx-push-url="true">
+        <div class="flex flex-wrap items-end gap-3">
+            <div class="w-48">
+                <label class="block text-xs font-medium text-gray-400 mb-1">Client</label>
+                <select name="client_id"
+                        class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500"
+                        hx-get="{% url 'dashboard:account_options' %}"
+                        hx-target="#account-select"
+                        hx-swap="innerHTML"
+                        hx-trigger="change">
+                    <option value="">All Clients</option>
+                    {% for c in clients %}
+                    <option value="{{ c.client_id }}" {% if selected_client_id == c.client_id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-56">
+                <label class="block text-xs font-medium text-gray-400 mb-1">Account</label>
+                <select name="account_id" id="account-select"
+                        class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500">
+                    <option value="">All Accounts</option>
+                    {% for acct_id, acct_label in account_options %}
+                    <option value="{{ acct_id }}" {% if selected_account_id == acct_id %}selected{% endif %}>{{ acct_label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="w-40">
+                <label class="block text-xs font-medium text-gray-400 mb-1">From</label>
+                <input type="date" name="date_from" value="{{ date_from }}"
+                       class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="w-40">
+                <label class="block text-xs font-medium text-gray-400 mb-1">To</label>
+                <input type="date" name="date_to" value="{{ date_to }}"
+                       class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div class="w-32">
+                <label class="block text-xs font-medium text-gray-400 mb-1">Pending</label>
+                <select name="pending"
+                        class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white focus:ring-2 focus:ring-blue-500">
+                    <option value="" {% if pending == "" %}selected{% endif %}>All</option>
+                    <option value="true" {% if pending == "true" %}selected{% endif %}>Pending Only</option>
+                    <option value="false" {% if pending == "false" %}selected{% endif %}>Posted Only</option>
+                </select>
+            </div>
+            <div class="w-56">
+                <label class="block text-xs font-medium text-gray-400 mb-1">Search</label>
+                <input type="text" name="search" value="{{ search }}"
+                       placeholder="Transaction or merchant..."
+                       class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500"
+                       hx-get="{% url 'dashboard:transactions' %}"
+                       hx-target="#transactions-content"
+                       hx-swap="innerHTML"
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-include="#txn-filters"
+                       hx-push-url="true">
+            </div>
+            <div>
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    Apply
+                </button>
+            </div>
+            <!-- CSV Export (desktop only) -->
+            {% if not is_mobile %}
+            <div class="hidden md:block">
+                <a href="{% url 'dashboard:export_csv' %}?client_id={{ selected_client_id }}&account_id={{ selected_account_id }}&date_from={{ date_from }}&date_to={{ date_to }}&pending={{ pending }}&search={{ search }}"
+                   class="inline-block px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors">
+                    Export CSV
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Transactions Table -->
+<div class="bg-gray-800 rounded-xl border border-gray-700">
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead class="bg-gray-900/50">
+                <tr>
+                    {% for col_name, col_key in "Date:transaction_date,Transaction:transaction_name,Merchant:merchant_name,Amount:amount,Pending:pending,Account:account_name,Institution:institution_name,Channel:payment_channel,Type:transaction_type,Direction:flow_direction"|split_pairs %}
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider whitespace-nowrap cursor-pointer hover:text-white"
+                        hx-get="{% url 'dashboard:transactions' %}?sort={{ col_key }}&order={% if sort == col_key and order == 'desc' %}asc{% else %}desc{% endif %}&client_id={{ selected_client_id }}&account_id={{ selected_account_id }}&date_from={{ date_from }}&date_to={{ date_to }}&pending={{ pending }}&search={{ search }}"
+                        hx-target="#transactions-content"
+                        hx-swap="innerHTML"
+                        hx-push-url="true">
+                        {{ col_name }}
+                        {% if sort == col_key %}
+                        <span class="text-blue-400">{% if order == 'asc' %}&uarr;{% else %}&darr;{% endif %}</span>
+                        {% endif %}
+                    </th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-700">
+                {% for row in transactions.rows %}
+                <tr class="hover:bg-gray-700/50 transition-colors">
+                    <td class="px-4 py-3 text-gray-300 whitespace-nowrap">{{ row.transaction_date|date:"M d, Y"|default:"-" }}</td>
+                    <td class="px-4 py-3 text-white font-medium max-w-xs truncate">{{ row.transaction_name|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-300 max-w-xs truncate">{{ row.merchant_name|default:"-" }}</td>
+                    <td class="px-4 py-3 num-col {% if row.amount < 0 %}text-red-400{% else %}text-green-400{% endif %} font-medium">
+                        {{ row.amount|floatformat:2 }}
+                    </td>
+                    <td class="px-4 py-3">
+                        {% if row.pending %}
+                        <span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-800 text-yellow-200">Pending</span>
+                        {% else %}
+                        <span class="text-gray-500 text-xs">Posted</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-gray-300">{{ row.account_name|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-300">{{ row.institution_name|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-400 text-xs">{{ row.payment_channel|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-400 text-xs">{{ row.transaction_type|default:"-" }}</td>
+                    <td class="px-4 py-3 text-gray-400 text-xs">{{ row.flow_direction|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="10" class="px-4 py-8 text-center text-gray-500">No transactions found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    {% if transactions.total_pages > 1 %}
+    <div class="px-6 py-4 border-t border-gray-700 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p class="text-sm text-gray-400">
+            {{ transactions.total|intcomma_safe }} transactions &middot; page {{ transactions.page }} of {{ transactions.total_pages }}
+        </p>
+        <div class="flex gap-2">
+            {% if transactions.page > 1 %}
+            <button class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white"
+                    hx-get="{% url 'dashboard:transactions' %}?page={{ transactions.page|add:"-1" }}&sort={{ sort }}&order={{ order }}&client_id={{ selected_client_id }}&account_id={{ selected_account_id }}&date_from={{ date_from }}&date_to={{ date_to }}&pending={{ pending }}&search={{ search }}"
+                    hx-target="#transactions-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true">
+                Previous
+            </button>
+            {% endif %}
+            {% if transactions.page < transactions.total_pages %}
+            <button class="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded text-sm text-white"
+                    hx-get="{% url 'dashboard:transactions' %}?page={{ transactions.page|add:"1" }}&sort={{ sort }}&order={{ order }}&client_id={{ selected_client_id }}&account_id={{ selected_account_id }}&date_from={{ date_from }}&date_to={{ date_to }}&pending={{ pending }}&search={{ search }}"
+                    hx-target="#transactions-content"
+                    hx-swap="innerHTML"
+                    hx-push-url="true">
+                Next
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>

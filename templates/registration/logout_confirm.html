@@ -1,0 +1,18 @@
+{% extends "base_auth.html" %}
+{% block title %}Logout{% endblock %}
+{% block heading %}Sign Out{% endblock %}
+
+{% block form_content %}
+<p class="text-gray-400 text-sm mb-6 text-center">Are you sure you want to sign out?</p>
+<form method="post" class="space-y-4">
+    {% csrf_token %}
+    <button type="submit"
+            class="w-full py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors">
+        Sign Out
+    </button>
+    <a href="{% url 'dashboard:summary' %}"
+       class="block w-full py-2.5 px-4 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium text-center transition-colors">
+        Cancel
+    </a>
+</form>
+{% endblock %}

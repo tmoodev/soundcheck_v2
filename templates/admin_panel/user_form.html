@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <h1 class="text-xl font-bold mb-6">{{ page_title }}</h1>
+
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="bg-red-800/50 text-red-200 border border-red-700 rounded-lg px-4 py-3 text-sm">
+                {% for field, errors in form.errors.items %}
+                <p>{{ field }}: {% for e in errors %}{{ e }}{% endfor %}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    {% if edit_user %}Update{% else %}Create{% endif %}
+                </button>
+                <a href="{% url 'admin_panel:user_list' %}"
+                   class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

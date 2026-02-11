@@ -1,0 +1,40 @@
+{% extends "base_auth.html" %}
+{% block title %}Set Up MFA{% endblock %}
+{% block heading %}Set Up Multi-Factor Authentication{% endblock %}
+
+{% block form_content %}
+<div class="space-y-4">
+    <p class="text-sm text-gray-400">
+        Scan the QR code with Microsoft Authenticator (or any TOTP app), then enter the 6-digit code.
+    </p>
+
+    <div class="flex justify-center py-4">
+        <img src="data:image/png;base64,{{ qr_b64 }}" alt="MFA QR Code" class="w-48 h-48 rounded-lg bg-white p-2">
+    </div>
+
+    <details class="text-sm text-gray-400">
+        <summary class="cursor-pointer text-blue-400 hover:text-blue-300">Can't scan? Enter key manually</summary>
+        <code class="block mt-2 bg-gray-900 p-3 rounded text-xs break-all select-all">{{ secret }}</code>
+    </details>
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="bg-red-800/50 text-red-200 border border-red-700 rounded-lg px-4 py-3 text-sm">
+            {% for field, errors in form.errors.items %}{% for error in errors %}{{ error }}{% endfor %}{% endfor %}
+        </div>
+        {% endif %}
+
+        <div>
+            <label for="id_code" class="block text-sm font-medium text-gray-300 mb-1">Verification Code</label>
+            {{ form.code }}
+        </div>
+
+        <button type="submit"
+                class="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
+            Verify &amp; Enable MFA
+        </button>
+    </form>
+</div>
+{% endblock %}

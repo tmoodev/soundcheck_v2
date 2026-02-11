@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% load dashboard_tags %}
+
+{% block content %}
+<div id="transactions-content"
+     hx-get="{% url 'dashboard:transactions' %}"
+     hx-trigger="none"
+     hx-target="#transactions-content"
+     hx-swap="innerHTML">
+    {% include "partials/transactions_content.html" %}
+</div>
+{% endblock %}

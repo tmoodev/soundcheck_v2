@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <h1 class="text-xl font-bold mb-6">{{ page_title }}</h1>
+
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6 mb-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            {% if form.errors %}
+            <div class="bg-red-800/50 text-red-200 border border-red-700 rounded-lg px-4 py-3 text-sm">
+                {% for field, errors in form.errors.items %}
+                <p>{{ field }}: {% for e in errors %}{{ e }}{% endfor %}</p>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-300 mb-1">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+            </div>
+            {% endfor %}
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors">
+                    {% if client %}Update{% else %}Create{% endif %}
+                </button>
+                <a href="{% url 'admin_panel:client_list' %}"
+                   class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    {% if client and mappings is not None %}
+    <div class="bg-gray-800 rounded-xl border border-gray-700 p-6">
+        <h2 class="text-lg font-semibold mb-4">Account Mappings</h2>
+        {% if mappings %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+                <thead class="bg-gray-900/50">
+                    <tr>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Account ID</th>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-700">
+                    {% for m in mappings %}
+                    <tr class="hover:bg-gray-700/50">
+                        <td class="px-4 py-2 text-gray-300 font-mono text-xs">{{ m.account_id }}</td>
+                        <td class="px-4 py-2">
+                            <form method="post"
+                                  action="{% url 'admin_panel:client_mapping_delete' client.pk m.pk %}"
+                                  class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="text-red-400 hover:text-red-300 text-xs"
+                                        onclick="return confirm('Remove this account mapping?')">Remove</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">No accounts mapped yet.</p>
+        {% endif %}
+
+        <div class="mt-4">
+            <a href="{% url 'admin_panel:client_mappings' client.pk %}"
+               class="px-4 py-2 bg-green-700 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors">
+                Add Account Mappings
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
