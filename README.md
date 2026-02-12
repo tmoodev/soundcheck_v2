@@ -79,6 +79,26 @@ python manage.py runserver
 # 10. Open http://dev.localhost:8000
 ```
 
+### Quick verification commands
+
+After provisioning a tenant (for example `demo.localhost` as shown above) you can quickly
+confirm routing works with curl:
+
+```bash
+# Public schema should return the landing page (HTTP 200)
+
+# Tenant schema should redirect unauthenticated users to /auth/login/
+
+# Login page should be reachable
+curl -I http://demo.localhost:8000/auth/login/
+```
+
+If you see `404 Not Found` for the tenant URLs, ensure that:
+
+1. `/etc/hosts` maps `demo.localhost` → `127.0.0.1`
+2. The domain exists in the `Domain` table (`python manage.py shell -c "from tenants.models import Domain; print(Domain.objects.all())"`)
+3. `DJANGO_ALLOWED_HOSTS` includes `.localhost` so subdomains resolve during development.
+
 ### Important: Analytics Views
 
 The dashboard reads from existing analytics views within each tenant schema:
